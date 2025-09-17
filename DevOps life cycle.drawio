@@ -1,0 +1,37 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" version="28.2.3">
+  <diagram name="Page-1" id="8cWakZZZZDsp-CVCH2wc">
+    <mxGraphModel dx="758" dy="1462" grid="0" gridSize="10" guides="0" tooltips="1" connect="0" arrows="0" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="IISRyeF43eyaf3N8_hxU-3" value="&lt;font style=&quot;font-size: 24px; background-color: light-dark(#ffffff, var(--ge-dark-color, #121212));&quot;&gt;develop&lt;/font&gt;" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+          <mxGeometry x="510" y="-210" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="IISRyeF43eyaf3N8_hxU-4" value="&lt;font style=&quot;font-size: 29px;&quot;&gt;plan&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="496" y="-531" width="181" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="IISRyeF43eyaf3N8_hxU-6" value="&lt;font style=&quot;font-size: 22px;&quot;&gt;develop&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="499" y="-440" width="179" height="61" as="geometry" />
+        </mxCell>
+        <mxCell id="IISRyeF43eyaf3N8_hxU-7" value="&lt;font style=&quot;font-size: 23px;&quot;&gt;test&lt;/font&gt;" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+          <mxGeometry x="488" y="-293" width="194" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="IISRyeF43eyaf3N8_hxU-10" value="&lt;font style=&quot;font-size: 21px;&quot;&gt;bult&lt;/font&gt;" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+          <mxGeometry x="488" y="-367" width="207" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="IISRyeF43eyaf3N8_hxU-12" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;deploy&lt;/font&gt;" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="509" y="-49" width="109" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="IISRyeF43eyaf3N8_hxU-13" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;release&lt;/font&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+          <mxGeometry x="481" y="-117" width="160" height="53" as="geometry" />
+        </mxCell>
+        <mxCell id="IISRyeF43eyaf3N8_hxU-14" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;operator-person\actor&lt;/font&gt;" style="shape=step;perimeter=stepPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=8.20001220703125;" vertex="1" parent="1">
+          <mxGeometry x="495" y="82" width="152" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="IISRyeF43eyaf3N8_hxU-15" value="&lt;ul&gt;&lt;li&gt;&lt;font style=&quot;font-size: 25px;&quot;&gt;Monitor&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;" vertex="1" parent="1">
+          <mxGeometry x="505" y="157" width="146" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
