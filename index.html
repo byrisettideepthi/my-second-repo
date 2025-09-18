@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agriculture Drone Technology — Dashboard</title>
+
+  <!-- Leaflet for maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-sA+e2XgF3g+gF6vQe9k9j2e2b0X0bq4WQk2f2g6v+gI=" crossorigin=""/>
+
+  <!-- Chart.js for charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0f1724; /* dark navy */
+      --card:#0b1220;
+      --muted:#98a0b3;
+      --accent:#48bb78; /* green */
+      --glass: rgba(255,255,255,0.04);
+      --glass-2: rgba(255,255,255,0.02);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#071021);color:#e6eef8}
+    .container{max-width:1200px;margin:20px auto;padding:18px}
+
+    header{display:flex;align-items:center;gap:16px}
+    h1{margin:0;font-size:20px}
+    .top-meta{margin-left:auto;display:flex;gap:12px;align-items:center}
+
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:16px}
+    .card{background:linear-gradient(180deg,var(--card),#081021);padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03)}
+
+    /* layout */
+    .map{grid-column:span 7;min-height:540px}
+    .sidebar{grid-column:span 5;display:flex;flex-direction:column;gap:14px}
+    .status-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .telemetry{display:flex;flex-direction:column;gap:8px}
+
+    .drone-card{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;background:var(--glass)}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .btn{background:transparent;border:1px solid rgba(255,255,255,0.08);padding:8px 12px;border-radius:8px;cursor:pointer}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),#34d399);color:#022;box-shadow:0 6px 18px rgba(72,187,120,0.12);border:none}
+
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;text-align:left;font-size:13px}
+    th{color:var(--muted);font-weight:600}
+    tr td{border-top:1px dashed rgba(255,255,255,0.02)}
+
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+
+    /* responsive */
+    @media (max-width:1000px){
+      .map{grid-column:1/-1;min-height:420px}
+      .sidebar{grid-column:1/-1}
+      .grid{grid-template-columns:repeat(6,1fr)}
+      .map{grid-column:span 6}
+      .sidebar{grid-column:span 6}
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24' fill='none'><circle cx='12' cy='12' r='11' fill='%2348bb78'/><path d='M6 12l3 3 9-9' stroke='%23081410' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>" alt="logo" style="width:42px;height:42px;border-radius:8px;"/>
+      <div>
+        <h1>Agriculture Drone Technology — Operational Dashboard</h1>
+        <div style="color:var(--muted);font-size:13px">Monitor drones, telemetry, field maps, missions & NDVI imagery</div>
+      </div>
+
+      <div class="top-meta">
+        <div style="text-align:right">
+          <div style="font-weight:700">Fleet Health</div>
+          <div style="color:var(--muted);font-size:13px" id="fleetHealth">Loading...</div>
+        </div>
+        <button class="btn" id="refreshBtn">⟳ Refresh</button>
+        <button class="btn primary" id="addMission">New Mission</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="card map" id="mapCard">
+        <div id="map" style="width:100%;height:100%;border-radius:8px;overflow:hidden"></div>
+      </div>
+
+      <aside class="sidebar">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <strong>Fleet Overview</strong>
+            <small style="color:var(--muted);">Updated: <span id="lastUpdated">—</span></small>
+          </div>
+
+          <div class="status-grid" style="margin-top:10px">
+            <div class="card" style="padding:10px">
+              <div style="font-size:12px;color:var(--muted)">Active Drones</div>
+              <div style="font-size:22px;font-weight:700" id="activeCount">0</div>
+            </div>
+            <div class="card" style="padding:10px">
+              <div style="font-size:12px;color:var(--muted)">Missions</div>
+              <div style="font-size:22px;font-weight:700" id="missionCount">0</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div style="font-weight:700;margin-bottom:6px">Drones</div>
+            <div id="droneList" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </div>
+
+        <div class="card telemetry">
+          <strong>Telemetry (selected drone)</strong>
+          <div id="telemetryCard" style="margin-top:8px;color:var(--muted)">No drone selected</div>
+
+          <div style="margin-top:12px">
+            <canvas id="batteryChart" height="120"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <strong>Mission Log</strong>
+          <table style="margin-top:8px">
+            <thead><tr><th>Mission</th><th>Status</th></tr></thead>
+            <tbody id="missionLog">
+            </tbody>
+          </table>
+        </div>
+      </aside>
+
+      <div class="card" style="grid-column:1/-1;margin-top:8px;display:flex;gap:14px;align-items:flex-start">
+        <div style="flex:1">
+          <strong>NDVI / Field Imagery</strong>
+          <div style="margin-top:8px;color:var(--muted);font-size:13px">Upload an orthomosaic or sample imagery (mock viewer)</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <input type="file" id="imgUpload" accept="image/*"/>
+            <button class="btn" id="processImg">Process (simulate NDVI)</button>
+          </div>
+          <div id="imgPreview" style="margin-top:10px;max-height:200px;overflow:hidden;border-radius:8px;background:var(--glass-2);display:flex;align-items:center;justify-content:center">No image</div>
+        </div>
+
+        <div style="width:340px">
+          <strong>Quick Controls</strong>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <button class="btn primary" id="armAll">Arm All Drones</button>
+            <button class="btn" id="rtbAll">Return to Base (RTB)</button>
+            <button class="btn" id="pauseMissions">Pause Missions</button>
+            <button class="btn" id="downloadReport">Export Report</button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <footer>Tip: Save this page as a single .html file and open it in a modern browser. Map tiles require internet access.</footer>
+  </div>
+
+  <!-- Leaflet script -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-o9N1j7k6rj6VwXk2VZk1c5p3KQX0p3a5s9g0v+QfC2A=" crossorigin=""></script>
+
+  <script>
+    // ------- Mock dataset -------
+    const drones = [
+      { id: 'DR-001', name:'Scout-A', lat: 19.0760, lon:72.8777, battery:88, alt:120, status:'idle' },
+      { id: 'DR-002', name:'Scout-B', lat: 19.0800, lon:72.8820, battery:62, alt:85, status:'in-mission' },
+      { id: 'DR-003', name:'Agro-01', lat: 19.0700, lon:72.8700, battery:41, alt:0, status:'charging' }
+    ];
+
+    // map setup
+    const map = L.map('map', { zoomControl:true }).setView([19.0760,72.8777], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // drone markers
+    const droneMarkers = {};
+    const droneIcons = {
+      idle: L.divIcon({ className:'drone-icon', html: '<div style="width:18px;height:18px;border-radius:50%;background:#48bb78;border:2px solid #071021"></div>', iconSize:[18,18]}),
+      'in-mission': L.divIcon({ className:'drone-icon', html: '<div style="width:18px;height:18px;border-radius:50%;background:#f59e0b;border:2px solid #071021"></div>', iconSize:[18,18]}),
+      charging: L.divIcon({ className:'drone-icon', html: '<div style="width:18px;height:18px;border-radius:50%;background:#60a5fa;border:2px solid #071021"></div>', iconSize:[18,18]})
+    };
+
+    function addMarkers(){
+      drones.forEach(d => {
+        const m = L.marker([d.lat,d.lon], {icon:droneIcons[d.status] || droneIcons.idle}).addTo(map)
+          .bindPopup(`<strong>${d.name}</strong><br/>ID: ${d.id}<br/>Battery: ${d.battery}%<br/>Alt: ${d.alt}m`);
+        droneMarkers[d.id] = m;
+      });
+    }
+    addMarkers();
+
+    // sidebar list
+    const droneListEl = document.getElementById('droneList');
+    const telemetryCard = document.getElementById('telemetryCard');
+    let selectedDrone = null;
+
+    function renderDroneList(){
+      droneListEl.innerHTML = '';
+      drones.forEach(d=>{
+        const el = document.createElement('div');
+        el.className = 'drone-card';
+        el.innerHTML = `
+          <div style='flex:1'>
+            <div style='font-weight:700'>${d.name}</div>
+            <div style='font-size:12px;color:var(--muted)'>${d.id} • ${d.status}</div>
+          </div>
+          <div style='text-align:right'>
+            <div style='font-weight:700'>${d.battery}%</div>
+            <div style='font-size:12px;color:var(--muted)'>${d.alt} m</div>
+          </div>
+        `;
+        el.style.cursor = 'pointer';
+        el.addEventListener('click',()=>{ selectDrone(d.id); map.setView([d.lat,d.lon],15) });
+        droneListEl.appendChild(el);
+      })
+      document.getElementById('activeCount').innerText = drones.filter(d=>d.status!=='charging').length;
+      document.getElementById('missionCount').innerText = drones.filter(d=>d.status==='in-mission').length;
+    }
+    renderDroneList();
+
+    function selectDrone(id){
+      selectedDrone = drones.find(x=>x.id===id);
+      if(!selectedDrone) return;
+      telemetryCard.innerHTML = `
+        <div style='display:flex;justify-content:space-between'>
+          <div><strong>${selectedDrone.name}</strong><div style='font-size:12px;color:var(--muted)'>ID: ${selectedDrone.id}</div></div>
+          <div style='text-align:right'><div style='font-weight:700'>${selectedDrone.battery}%</div><div style='font-size:12px;color:var(--muted)'>${selectedDrone.alt} m</div></div>
+        </div>
+      `;
+      updateBatteryChart(selectedDrone);
+    }
+
+    // mission log
+    const missionLogEl = document.getElementById('missionLog');
+    const missions = [
+      { name:'Survey Field A', status:'Completed'},
+      { name:'Pesticide Sweep B', status:'In Progress'},
+    ];
+    function renderMissionLog(){
+      missionLogEl.innerHTML = '';
+      missions.forEach(m=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${m.name}</td><td style='font-weight:700'>${m.status}</td>`;
+        missionLogEl.appendChild(tr);
+      })
+    }
+    renderMissionLog();
+
+    // fleet health (simple aggregate)
+    function computeFleetHealth(){
+      const avgBattery = Math.round(drones.reduce((s,d)=>s+d.battery,0)/drones.length);
+      document.getElementById('fleetHealth').innerText = `${avgBattery}% avg battery`;
+      document.getElementById('lastUpdated').innerText = new Date().toLocaleString();
+    }
+    computeFleetHealth();
+
+    // simulated telemetry updates
+    function tickTelemetry(){
+      drones.forEach(d=>{
+        if(d.status==='in-mission'){
+          d.battery = Math.max(0,d.battery - (Math.random()*1.2 + 0.2));
+          d.alt = Math.max(30, d.alt + (Math.random()*6 - 3));
+          // move slightly
+          d.lat += (Math.random()-0.5)*0.0006;
+          d.lon += (Math.random()-0.5)*0.0006;
+        } else if(d.status==='idle'){
+          d.battery = Math.max(10,d.battery - (Math.random()*0.2));
+        } else if(d.status==='charging'){
+          d.battery = Math.min(100,d.battery + (Math.random()*2.5 + 1));
+        }
+        // update marker
+        const m = droneMarkers[d.id];
+        if(m){ m.setLatLng([d.lat,d.lon]); m.setPopupContent(`<strong>${d.name}</strong><br/>ID: ${d.id}<br/>Battery: ${Math.round(d.battery)}%<br/>Alt: ${Math.round(d.alt)}m`);
+          // change icon color by status or battery threshold
+          if(d.battery < 25) m.setIcon(L.divIcon({html:'<div style="width:18px;height:18px;border-radius:50%;background:#ef4444;border:2px solid #071021"></div>'}));
+        }
+      });
+      renderDroneList();
+      computeFleetHealth();
+      if(selectedDrone) selectDrone(selectedDrone.id);
+      setTimeout(tickTelemetry, 3000);
+    }
+    setTimeout(tickTelemetry,3000);
+
+    // Battery chart (uses Chart.js)
+    const batteryCtx = document.getElementById('batteryChart');
+    const batteryChart = new Chart(batteryCtx, {
+      type:'line',
+      data:{labels:[],datasets:[{label:'Battery %',data:[],fill:true,tension:0.3,pointRadius:2}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{min:0,max:100}}}
+    });
+
+    function updateBatteryChart(drone){
+      if(!drone) return;
+      const now = new Date().toLocaleTimeString();
+      const ds = batteryChart.data;
+      ds.labels.push(now);
+      ds.datasets[0].data.push(Math.round(drone.battery));
+      if(ds.labels.length>20){ds.labels.shift(); ds.datasets[0].data.shift();}
+      batteryChart.update();
+    }
+
+    // buttons
+    document.getElementById('refreshBtn').addEventListener('click',()=>{ renderDroneList(); computeFleetHealth(); alert('Refreshed') });
+    document.getElementById('addMission').addEventListener('click',()=>{ const name = prompt('New mission name','Survey Field X'); if(name){ missions.push({name,status:'Scheduled'}); renderMissionLog(); alert('Mission added') } });
+    document.getElementById('armAll').addEventListener('click',()=>{ drones.forEach(d=>d.status='idle'); renderDroneList(); computeFleetHealth(); alert('All drones armed (simulation)') });
+    document.getElementById('rtbAll').addEventListener('click',()=>{ drones.forEach(d=>{ d.status='returning'; d.lat = 19.0760; d.lon = 72.8777; }); renderDroneList(); computeFleetHealth(); alert('All drones returning to base (simulation)') });
+    document.getElementById('pauseMissions').addEventListener('click',()=>{ drones.forEach(d=>{ if(d.status==='in-mission') d.status='idle' }); renderDroneList(); alert('Missions paused') });
+
+    document.getElementById('downloadReport').addEventListener('click',()=>{
+      const report = {
+        generated: new Date().toISOString(),
+        drones: drones.map(d=>({id:d.id,name:d.name,battery:Math.round(d.battery),status:d.status,lat:d.lat,lon:d.lon}))
+      };
+      const blob = new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download='drone-report.json'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // image upload -> simulate NDVI
+    const imgUpload = document.getElementById('imgUpload');
+    const imgPreview = document.getElementById('imgPreview');
+    document.getElementById('processImg').addEventListener('click',()=>{
+      const f = imgUpload.files[0];
+      if(!f){ alert('Choose an image first'); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = ()=>{
+          // create canvas and apply a mock NDVI effect (green highlight)
+          const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+          const ctx = c.getContext('2d'); ctx.drawImage(img,0,0);
+          const imgd = ctx.getImageData(0,0,c.width,c.height);
+          for(let i=0;i<imgd.data.length;i+=4){
+            const r = imgd.data[i]; const g = imgd.data[i+1]; const b = imgd.data[i+2];
+            // simple vegetation index approximation (not real NDVI): highlight green areas
+            const veg = g - (r+b)/2;
+            if(veg>20){ imgd.data[i] = 30; imgd.data[i+1] = 200; imgd.data[i+2] = 60; } // green
+            else{ imgd.data[i] = r*0.6; imgd.data[i+1] = g*0.6; imgd.data[i+2] = b*0.6; }
+          }
+          ctx.putImageData(imgd,0,0);
+          imgPreview.innerHTML = ''; imgPreview.appendChild(c);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(f);
+    });
+
+    // initial select first drone
+    setTimeout(()=>{ selectDrone(drones[0].id); },300);
+
+    // small helper to periodically compute fleet health label easing
+    setInterval(()=>{ computeFleetHealth(); }, 5000);
+
+  </script>
+</body>
+</html>
